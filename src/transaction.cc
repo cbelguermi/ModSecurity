@@ -972,6 +972,7 @@ int Transaction::processRequestBody() {
  *
  */
 int Transaction::requestBodyFromFile(const char *path) {
+    int current_size = this->m_requestBody.tellp();
     std::ifstream request_body(path);
     std::string str;
 
@@ -981,24 +982,53 @@ int Transaction::requestBodyFromFile(const char *path) {
     }
 
     request_body.seekg(0, std::ios::end);
-    try {
-        str.reserve(request_body.tellg());
-    } catch (...) {
-        ms_dbg(3, "Failed to allocate memory to load request body.");
-        return false;
-    }
-    request_body.seekg(0, std::ios::beg);
-    str.assign((std::istreambuf_iterator<char>(request_body)),
-            std::istreambuf_iterator<char>());
-
-    const char *buf = str.c_str();
     int len = request_body.tellg();
+
+    request_body.seekg(0, std::ios::beg);
 
     ms_dbg(9, "Adding request body: " + std::to_string(len) + " bytes. " \
         "Limit set to: "
         + std::to_string(this->m_rules->m_requestBodyLimit.m_value));
 
-    return appendRequestBody(reinterpret_cast<const unsigned char*>(buf), len);
+    if (this->m_rules->m_requestBodyLimit.m_value > 0
+        && this->m_rules->m_requestBodyLimit.m_value < len + current_size) {
+        m_variableInboundDataError.set("1", m_variableOffset);
+        ms_dbg(5, "Request body is bigger than the maximum expected.");
+
+        if (this->m_rules->m_requestBodyLimitAction ==
+            RulesSet::BodyLimitAction::ProcessPartialBodyLimitAction) {
+            size_t spaceLeft = this->m_rules->m_requestBodyLimit.m_value
+                - current_size;
+            std::copy_n(std::istreambuf_iterator<char>(request_body),
+                spaceLeft,
+                std::ostreambuf_iterator<char>(this->m_requestBody));
+            ms_dbg(5, "Request body limit is marked to process partial");
+            return false;
+        } else {
+            if (this->m_rules->m_requestBodyLimitAction ==
+                RulesSet::BodyLimitAction::RejectBodyLimitAction) {
+                ms_dbg(5, "Request body limit is marked to reject the " \
+                    "request");
+                if (getRuleEngineState() == RulesSet::EnabledRuleEngine) {
+                    intervention::free(&m_it);
+                    m_it.log = strdup("Request body limit is marked to " \
+                            "reject the request");
+                    m_it.status = 403;
+                    m_it.disruptive = true;
+                } else {
+                    ms_dbg(5, "Not rejecting the request as the engine is " \
+                        "not Enabled");
+                }
+            }
+            return true;
+        }
+    }
+
+    std::copy(std::istreambuf_iterator<char>(request_body),
+        std::istreambuf_iterator<char>(),
+        std::ostreambuf_iterator<char>(this->m_requestBody));
+
+    return true;
 }
 
 int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
