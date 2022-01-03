@@ -948,12 +948,12 @@ int Transaction::processRequestBody() {
 
 
 /**
- * @name    appendRequestBody
- * @brief   Adds request body to be inspected.
+ * @name    requestBodyFromFile
+ * @brief   Adds request body from a file to be inspected.
  *
  * With this method it is possible to feed ModSecurity with data for
  * inspection regarding the request body. There are two possibilities here:
- * 
+ *
  * 1 - Adds the buffer in a row;
  * 2 - Adds it in chunks;
  *
@@ -1031,6 +1031,30 @@ int Transaction::requestBodyFromFile(const char *path) {
     return true;
 }
 
+/**
+ * @name    appendRequestBody
+ * @brief   Adds request body to be inspected.
+ *
+ * With this method it is possible to feed ModSecurity with data for
+ * inspection regarding the request body. There are two possibilities here:
+ *
+ * 1 - Adds the buffer in a row;
+ * 2 - Adds it in chunks;
+ *
+ * A third option should be developed which is share your application buffer.
+ * In any case, remember that the utilization of this function may reduce your
+ * server throughput, as this buffer creations is computationally expensive.
+ *
+ * @note While feeding ModSecurity remember to keep checking if there is an
+ *       intervention, Sec Language has the capability to set the maximum
+ *       inspection size which may be reached, and the decision on what to do
+ *       in this case is upon the rules.
+ *
+ * @returns If the operation was successful or not.
+ * @retval true Operation was successful.
+ * @retval false Operation failed.
+ *
+ */
 int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
     int current_size = this->m_requestBody.tellp();
 
