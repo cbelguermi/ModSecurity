@@ -324,8 +324,12 @@ void perform_unit_test(ModSecurityTest<RegressionTest> *test,
         }
 #endif
 
+        bool clientipaddrwaf_present = false;
         for (std::pair<std::string, std::string> headers :
             t->request_headers) {
+            if (headers.first == "clientipaddrwaf") {
+                clientipaddrwaf_present = true;
+            }
             modsec_transaction->addRequestHeader(headers.first.c_str(),
                 headers.second.c_str());
         }
@@ -378,6 +382,15 @@ void perform_unit_test(ModSecurityTest<RegressionTest> *test,
 #if 0
 end:
 #endif
+        if (clientipaddrwaf_present) {
+            if (modsec_transaction->toJSON(modsec_rules->m_auditLog->getParts()).find(R"("client_ip":"52.123.25.47")") != std::string::npos) {
+                std::cout << "Client IP is the real one" << '\n';
+            }
+            else {
+                std::cout << KRED << "failed!" << RESET << std::endl;
+                testRes->passed = false;
+            }
+        }
         modsec_transaction->processLogging();
 
         CustomDebugLog *d = reinterpret_cast<CustomDebugLog *>

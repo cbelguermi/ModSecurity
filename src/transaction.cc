@@ -1711,7 +1711,6 @@ std::string Transaction::toJSON(int parts) {
             strlen("headers"));
         yajl_gen_map_open(g);
 
-
         m_variableRequestHeaders.resolve(&l);
         for (auto &h : l) {
             if ("clientipaddrwaf" == h->getKey()) {
@@ -1731,6 +1730,10 @@ std::string Transaction::toJSON(int parts) {
     if (!real_client_ip.empty()) {
         LOGFY_ADD("client_ip", real_client_ip.c_str());
     }
+    else {
+        LOGFY_ADD("client_ip", this->m_clientIpAddress->c_str());
+    }
+
 
 
     /* response */
