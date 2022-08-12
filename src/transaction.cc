@@ -1728,7 +1728,7 @@ std::string Transaction::toJSON(int parts) {
     /* end: request */
     yajl_gen_map_close(g);
 
-    if (real_client_ip != NULL) {
+    if (!real_client_ip.empty()) {
         LOGFY_ADD("client_ip", real_client_ip.c_str());
     }
 
