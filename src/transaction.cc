@@ -1677,7 +1677,7 @@ std::string Transaction::toJSON(int parts) {
 
     yajl_gen_map_open(g);
     /* Part: A (header mandatory) */
-    LOGFY_ADD("client_ip", this->m_clientIpAddress->c_str());
+    LOGFY_ADD("proxy_ip", this->m_clientIpAddress->c_str());
     LOGFY_ADD("time_stamp", ts.c_str());
     LOGFY_ADD("server_id", uniqueId.c_str());
     LOGFY_ADD_NUM("client_port", m_clientPort);
@@ -1709,8 +1709,13 @@ std::string Transaction::toJSON(int parts) {
             strlen("headers"));
         yajl_gen_map_open(g);
 
+        std::string real_client_ip;
+
         m_variableRequestHeaders.resolve(&l);
         for (auto &h : l) {
+            if ("clientipaddrwaf" == h->getKey().c_str()) {
+                real_client_ip = h->getValue();
+            }
             LOGFY_ADD(h->getKey().c_str(), h->getValue().c_str());
             delete h;
         }
@@ -1721,6 +1726,9 @@ std::string Transaction::toJSON(int parts) {
 
     /* end: request */
     yajl_gen_map_close(g);
+
+    LOGFY_ADD("client_ip", real_client_ip.c_str());
+
 
     /* response */
     yajl_gen_string(g, reinterpret_cast<const unsigned char*>("response"),
