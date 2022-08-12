@@ -1714,7 +1714,7 @@ std::string Transaction::toJSON(int parts) {
 
         m_variableRequestHeaders.resolve(&l);
         for (auto &h : l) {
-            if ("clientipaddrwaf" == h->getKey().c_str()) {
+            if ("clientipaddrwaf" == h->getKey()) {
                 real_client_ip = h->getValue();
             }
             LOGFY_ADD(h->getKey().c_str(), h->getValue().c_str());
