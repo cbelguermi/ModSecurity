@@ -1702,6 +1702,8 @@ std::string Transaction::toJSON(int parts) {
         LOGFY_ADD("body", this->m_requestBody.str().c_str());
     }
 
+    std::string real_client_ip;
+
     /* request headers */
     if (parts & audit_log::AuditLog::BAuditLogPart) {
         std::vector<const VariableValue *> l;
@@ -1709,7 +1711,6 @@ std::string Transaction::toJSON(int parts) {
             strlen("headers"));
         yajl_gen_map_open(g);
 
-        std::string real_client_ip;
 
         m_variableRequestHeaders.resolve(&l);
         for (auto &h : l) {
@@ -1727,7 +1728,9 @@ std::string Transaction::toJSON(int parts) {
     /* end: request */
     yajl_gen_map_close(g);
 
-    LOGFY_ADD("client_ip", real_client_ip.c_str());
+    if (real_client_ip != NULL) {
+        LOGFY_ADD("client_ip", real_client_ip.c_str());
+    }
 
 
     /* response */
